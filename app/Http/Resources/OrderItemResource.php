@@ -14,12 +14,24 @@ class OrderItemResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $productImage = null;
+        if ($this->product) {
+            $firstImage = $this->product->relationLoaded('images')
+                ? $this->product->images->first()
+                : $this->product->images()->first();
+
+            if ($firstImage && $firstImage->image) {
+                $productImage = asset('img/products/' . $firstImage->image);
+            }
+        }
+
         return [
             'id' => $this->id,
             'product_id' => $this->product_id,
             'product_variant_id' => $this->product_variant_id,
             'product_name_ar' => $this->product_name_ar,
             'product_name_en' => $this->product_name_en,
+            'product_image' => $productImage,
             'variant_details' => is_string($this->variant_details)
                 ? json_decode($this->variant_details, true)
                 : $this->variant_details,

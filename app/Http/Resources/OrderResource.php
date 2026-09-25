@@ -25,7 +25,6 @@ class OrderResource extends JsonResource
             'id' => $this->id,
             'order_number' => $this->order_number,
             'user' => $userData,
-            'customer' => $userData,
             'subtotal' => (float) $this->subtotal,
             'shipping' => $this->shipping !== null ? (float) $this->shipping : 0.0,
             'total' => (float) $this->total,

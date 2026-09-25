@@ -169,7 +169,7 @@ class OrderController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'تم إنشاء الطلب بنجاح.',
-                'data' => new OrderResource($order->load('orderItems')),
+                'data' => new OrderResource($order->load('orderItems.product.images')),
             ], 201);
         } catch (OrderException $e) {
             return response()->json([
