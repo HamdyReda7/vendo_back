@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Website;
 
 use App\Exceptions\OrderException;
 use App\Http\Controllers\Controller;

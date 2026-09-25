@@ -5,7 +5,7 @@ use App\Http\Controllers\Api\Admin\ColorController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\SizeController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\Website\OrderController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
