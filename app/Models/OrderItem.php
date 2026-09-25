@@ -26,6 +26,7 @@ class OrderItem extends Model
     protected function casts(): array
     {
         return [
+            'variant_details' => 'array',
             'quantity' => 'integer',
             'price' => 'decimal:2',
             'total' => 'decimal:2',
