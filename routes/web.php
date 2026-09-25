@@ -28,6 +28,7 @@ Route::group([
         return view('dashboard.index');
     })->middleware(['auth', 'verified', 'admin'])->name('dashboard');
 
+    /*
     Route::middleware('auth')->group(function () {
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -57,6 +58,7 @@ Route::group([
 
         Route::post('/products/image/delete', [ProductController::class, 'deleteImage'])->name('products.image.delete');
     });
+    */
 
     require __DIR__ . '/auth.php';
 });

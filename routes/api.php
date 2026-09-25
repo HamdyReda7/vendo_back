@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ColorController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\SizeController;
 use App\Http\Controllers\Api\AuthController;
@@ -56,5 +57,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/all/sizes', [SizeController::class, 'index']);
         Route::post('/create/sizes', [SizeController::class, 'store']);
         Route::delete('/delete/sizes/{id}', [SizeController::class, 'destroy']);
+
+        Route::get('/orders', [AdminOrderController::class, 'index']);
+        Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
+        Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
     });
 });

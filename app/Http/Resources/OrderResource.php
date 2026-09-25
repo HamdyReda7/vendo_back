@@ -14,9 +14,18 @@ class OrderResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $userData = $this->user ? [
+            'id' => $this->user->id,
+            'name' => $this->user->name,
+            'email' => $this->user->email,
+            'phone' => $this->user->phone,
+        ] : null;
+
         return [
             'id' => $this->id,
             'order_number' => $this->order_number,
+            'user' => $userData,
+            'customer' => $userData,
             'subtotal' => (float) $this->subtotal,
             'shipping' => $this->shipping !== null ? (float) $this->shipping : 0.0,
             'total' => (float) $this->total,
