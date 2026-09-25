@@ -1,0 +1,53 @@
+/* Password Eye Button */
+
+.password-toggle {
+    position: absolute;
+
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    border: none;
+
+    background: transparent;
+
+    color: #6c757d;
+
+    cursor: pointer;
+
+    z-index: 5;
+}
+
+/* English */
+
+html[dir="ltr"] .password-toggle {
+    right: 12px;
+
+    left: auto;
+}
+
+/* Arabic */
+
+html[dir="rtl"] .password-toggle {
+    left: 12px;
+
+    right: auto;
+}
+
+/* LTR */
+
+html[dir="ltr"] .password-input{
+
+    padding-right:45px;
+
+}
+
+/* RTL */
+
+html[dir="rtl"] .password-input{
+
+    padding-left:45px;
+
+    padding-right:.75rem;
+
+}
