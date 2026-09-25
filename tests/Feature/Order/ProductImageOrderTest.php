@@ -55,7 +55,7 @@ test('1. order item contains product_image when product exists and has images', 
         'total' => 150.00,
     ]);
 
-    $response = $this->getJson("/api/dashboard/orders/{$order->id}");
+    $response = $this->getJson("/api/dashboard/show/orders/{$order->id}");
 
     $response->assertStatus(200);
     $item = $response->json('data.items.0');
@@ -109,7 +109,7 @@ test('2. the returned image is the FIRST product image', function () {
         'total' => 200.00,
     ]);
 
-    $response = $this->getJson("/api/dashboard/orders/{$order->id}");
+    $response = $this->getJson("/api/dashboard/show/orders/{$order->id}");
 
     $response->assertStatus(200);
     $item = $response->json('data.items.0');
@@ -177,7 +177,7 @@ test('3. product_image is null if the product has no images or no longer exists'
     // Delete product B
     $productToBeDeleted->delete();
 
-    $response = $this->getJson("/api/dashboard/orders/{$order->id}");
+    $response = $this->getJson("/api/dashboard/show/orders/{$order->id}");
 
     $response->assertStatus(200);
     $items = $response->json('data.items');
@@ -224,7 +224,7 @@ test('4. Admin Orders index includes product_image', function () {
         'total' => 80.00,
     ]);
 
-    $response = $this->getJson('/api/dashboard/orders');
+    $response = $this->getJson('/api/dashboard/all/orders');
 
     $response->assertStatus(200);
     $item = $response->json('data.0.items.0');
@@ -270,7 +270,7 @@ test('5. Admin Orders show includes product_image', function () {
         'total' => 120.00,
     ]);
 
-    $response = $this->getJson("/api/dashboard/orders/{$order->id}");
+    $response = $this->getJson("/api/dashboard/show/orders/{$order->id}");
 
     $response->assertStatus(200);
     $item = $response->json('data.items.0');
@@ -328,7 +328,7 @@ test('6. no N+1 query issue is introduced by relationship loading', function () 
     DB::flushQueryLog();
     DB::enableQueryLog();
 
-    $response = $this->getJson('/api/dashboard/orders');
+    $response = $this->getJson('/api/dashboard/all/orders');
 
     $response->assertStatus(200);
 

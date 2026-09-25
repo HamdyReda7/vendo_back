@@ -58,8 +58,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/create/sizes', [SizeController::class, 'store']);
         Route::delete('/delete/sizes/{id}', [SizeController::class, 'destroy']);
 
-        Route::get('/orders', [AdminOrderController::class, 'index']);
-        Route::get('/orders/{id}', [AdminOrderController::class, 'show']);
-        Route::put('/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::get('/all/orders', [AdminOrderController::class, 'index']);
+        Route::get('/show/orders/{id}', [AdminOrderController::class, 'show']);
+        Route::put('/update/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
     });
 });

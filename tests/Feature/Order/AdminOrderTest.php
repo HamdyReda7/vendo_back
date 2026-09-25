@@ -33,7 +33,7 @@ test('1. admin can list orders', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->getJson('/api/dashboard/orders');
+    $response = $this->getJson('/api/dashboard/all/orders');
 
     $response->assertStatus(200)
         ->assertJson([
@@ -61,7 +61,7 @@ test('2. index pagination is 5 per page', function () {
         ]);
     }
 
-    $response = $this->getJson('/api/dashboard/orders');
+    $response = $this->getJson('/api/dashboard/all/orders');
 
     $response->assertStatus(200);
     expect($response->json('data'))->toHaveCount(5);
@@ -86,7 +86,7 @@ test('3. index includes customer information', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->getJson('/api/dashboard/orders');
+    $response = $this->getJson('/api/dashboard/all/orders');
 
     $response->assertStatus(200);
     $order = $response->json('data.0');
@@ -137,7 +137,7 @@ test('4. admin can show an order', function () {
         'total' => 150.00,
     ]);
 
-    $response = $this->getJson("/api/dashboard/orders/{$order->id}");
+    $response = $this->getJson("/api/dashboard/show/orders/{$order->id}");
 
     $response->assertStatus(200)
         ->assertJson([
@@ -175,7 +175,7 @@ test('5. show includes customer information and non-existing returns 404', funct
         'status' => 'pending',
     ]);
 
-    $response = $this->getJson("/api/dashboard/orders/{$order->id}");
+    $response = $this->getJson("/api/dashboard/show/orders/{$order->id}");
 
     $response->assertStatus(200);
     expect($response->json('data.user'))->toMatchArray([
@@ -186,7 +186,7 @@ test('5. show includes customer information and non-existing returns 404', funct
     ]);
 
     // Test non-existing order returns 404 with Arabic message
-    $resNotFound = $this->getJson('/api/dashboard/orders/999999');
+    $resNotFound = $this->getJson('/api/dashboard/show/orders/999999');
     $resNotFound->assertStatus(404)
         ->assertJson([
             'success' => false,
@@ -208,9 +208,9 @@ test('6. non-admin authenticated user cannot access admin orders', function () {
         'status' => 'pending',
     ]);
 
-    $this->getJson('/api/dashboard/orders')->assertStatus(403);
-    $this->getJson("/api/dashboard/orders/{$order->id}")->assertStatus(403);
-    $this->putJson("/api/dashboard/orders/{$order->id}/status", ['status' => 'confirmed'])->assertStatus(403);
+    $this->getJson('/api/dashboard/all/orders')->assertStatus(403);
+    $this->getJson("/api/dashboard/show/orders/{$order->id}")->assertStatus(403);
+    $this->putJson("/api/dashboard/update/orders/{$order->id}/status", ['status' => 'confirmed'])->assertStatus(403);
 });
 
 test('7. guest cannot access admin orders', function () {
@@ -225,9 +225,9 @@ test('7. guest cannot access admin orders', function () {
         'status' => 'pending',
     ]);
 
-    $this->getJson('/api/dashboard/orders')->assertStatus(401);
-    $this->getJson("/api/dashboard/orders/{$order->id}")->assertStatus(401);
-    $this->putJson("/api/dashboard/orders/{$order->id}/status", ['status' => 'confirmed'])->assertStatus(401);
+    $this->getJson('/api/dashboard/all/orders')->assertStatus(401);
+    $this->getJson("/api/dashboard/show/orders/{$order->id}")->assertStatus(401);
+    $this->putJson("/api/dashboard/update/orders/{$order->id}/status", ['status' => 'confirmed'])->assertStatus(401);
 });
 
 test('8. admin can update order status', function () {
@@ -244,7 +244,7 @@ test('8. admin can update order status', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $response = $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'confirmed',
         'subtotal' => 1.00, // Should be ignored
         'total' => 1.00,    // Should be ignored
@@ -285,7 +285,7 @@ test('9. invalid status is rejected', function () {
         'status' => 'pending',
     ]);
 
-    $response = $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $response = $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'unknown_status',
     ]);
 
@@ -348,7 +348,7 @@ test('11. cancelling an order restores stock', function () {
         'total' => 150.00,
     ]);
 
-    $response = $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $response = $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'cancelled',
     ]);
 
@@ -391,14 +391,14 @@ test('12. cancelling an already-cancelled order does NOT restore stock twice', f
     ]);
 
     // First cancel: stock goes from 10 to 12
-    $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'cancelled',
     ])->assertStatus(200);
 
     expect($product->fresh()->quantity)->toBe(12);
 
     // Second cancel: stock MUST remain 12
-    $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'cancelled',
     ])->assertStatus(200);
 
@@ -438,7 +438,7 @@ test('13. simple product stock restoration works', function () {
         'total' => 80.00,
     ]);
 
-    $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'cancelled',
     ])->assertStatus(200);
 
@@ -488,7 +488,7 @@ test('14. variant stock restoration works', function () {
         'total' => 200.00,
     ]);
 
-    $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+    $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
         'status' => 'cancelled',
     ])->assertStatus(200);
 
@@ -530,7 +530,7 @@ test('15. updating non-cancelled statuses does not modify stock', function () {
     $transitions = ['confirmed', 'processing', 'shipped', 'delivered'];
 
     foreach ($transitions as $status) {
-        $this->putJson("/api/dashboard/orders/{$order->id}/status", [
+        $this->putJson("/api/dashboard/update/orders/{$order->id}/status", [
             'status' => $status,
         ])->assertStatus(200);
 
