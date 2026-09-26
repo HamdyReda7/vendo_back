@@ -153,7 +153,7 @@ test('8. admin can activate a user', function () {
         'status' => false,
     ]);
 
-    $response = $this->putJson("/api/dashboard/update/users/{$user->id}/status", [
+    $response = $this->postJson("/api/dashboard/update/users/{$user->id}/status", [
         'status' => true,
     ]);
 
@@ -178,7 +178,7 @@ test('9. admin can deactivate a user', function () {
         'status' => true,
     ]);
 
-    $response = $this->putJson("/api/dashboard/update/users/{$user->id}/status", [
+    $response = $this->postJson("/api/dashboard/update/users/{$user->id}/status", [
         'status' => false,
     ]);
 
@@ -199,12 +199,12 @@ test('10. invalid status is rejected', function () {
     Sanctum::actingAs($this->admin);
 
     // Missing status
-    $resMissing = $this->putJson("/api/dashboard/update/users/{$this->normalUser->id}/status", []);
+    $resMissing = $this->postJson("/api/dashboard/update/users/{$this->normalUser->id}/status", []);
     $resMissing->assertStatus(422)
         ->assertJsonValidationErrors(['status']);
 
     // Non-boolean status
-    $resInvalid = $this->putJson("/api/dashboard/update/users/{$this->normalUser->id}/status", [
+    $resInvalid = $this->postJson("/api/dashboard/update/users/{$this->normalUser->id}/status", [
         'status' => 'invalid-status',
     ]);
     $resInvalid->assertStatus(422)
@@ -219,7 +219,7 @@ test('11. admin user cannot have their status changed', function () {
         'status' => true,
     ]);
 
-    $response = $this->putJson("/api/dashboard/update/users/{$anotherAdmin->id}/status", [
+    $response = $this->postJson("/api/dashboard/update/users/{$anotherAdmin->id}/status", [
         'status' => false,
     ]);
 
@@ -235,7 +235,7 @@ test('11. admin user cannot have their status changed', function () {
 test('12. unauthenticated users cannot access the APIs', function () {
     $this->getJson('/api/dashboard/all/users')->assertStatus(401);
     $this->getJson("/api/dashboard/show/users/{$this->normalUser->id}")->assertStatus(401);
-    $this->putJson("/api/dashboard/update/users/{$this->normalUser->id}/status", ['status' => false])->assertStatus(401);
+    $this->postJson("/api/dashboard/update/users/{$this->normalUser->id}/status", ['status' => false])->assertStatus(401);
 });
 
 test('13. normal non-admin users cannot access the APIs', function () {
@@ -243,7 +243,7 @@ test('13. normal non-admin users cannot access the APIs', function () {
 
     $this->getJson('/api/dashboard/all/users')->assertStatus(403);
     $this->getJson("/api/dashboard/show/users/{$this->normalUser->id}")->assertStatus(403);
-    $this->putJson("/api/dashboard/update/users/{$this->normalUser->id}/status", ['status' => false])->assertStatus(403);
+    $this->postJson("/api/dashboard/update/users/{$this->normalUser->id}/status", ['status' => false])->assertStatus(403);
 });
 
 test('14. password is never returned in the response', function () {
@@ -262,7 +262,7 @@ test('14. password is never returned in the response', function () {
     expect($resShow->json('data'))->not->toHaveKey('remember_token');
 
     // Update status
-    $resUpdate = $this->putJson("/api/dashboard/update/users/{$this->normalUser->id}/status", ['status' => false]);
+    $resUpdate = $this->postJson("/api/dashboard/update/users/{$this->normalUser->id}/status", ['status' => false]);
     $resUpdate->assertStatus(200);
     expect($resUpdate->json('data'))->not->toHaveKey('password');
     expect($resUpdate->json('data'))->not->toHaveKey('remember_token');
@@ -277,7 +277,7 @@ test('15. only status is changed by the update endpoint', function () {
     $originalPassword = $this->normalUser->password;
     $originalPhone = $this->normalUser->phone;
 
-    $response = $this->putJson("/api/dashboard/update/users/{$this->normalUser->id}/status", [
+    $response = $this->postJson("/api/dashboard/update/users/{$this->normalUser->id}/status", [
         'status' => false,
         'name' => 'Hacked Name',
         'email' => 'hacked@example.com',

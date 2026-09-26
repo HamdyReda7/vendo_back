@@ -74,6 +74,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/all/users', [UserController::class, 'index']);
         Route::get('/show/users/{id}', [UserController::class, 'show']);
-        Route::put('/update/users/{id}/status', [UserController::class, 'updateStatus']);
+        Route::post('/update/users/{id}/status', [UserController::class, 'updateStatus']);
     });
 });
