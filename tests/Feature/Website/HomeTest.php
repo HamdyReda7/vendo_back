@@ -5,7 +5,9 @@ use App\Models\Color;
 use App\Models\Product;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
+use App\Models\Review;
 use App\Models\Size;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 test('1. GET /api/home/products returns only active products ordered by latest first', function () {
@@ -320,3 +322,279 @@ test('9. eager loading prevents N+1 queries on home products and offers', functi
     // query count should be a small constant number (<= 6 queries), not proportional to product count.
     expect(count($queries))->toBeLessThanOrEqual(6);
 });
+
+test('10. GET /api/home/show/products/{id} returns product details with categories, images, variants, and reviews', function () {
+    $category = Category::create([
+        'name_ar' => 'ملابس',
+        'name_en' => 'Clothing',
+        'status' => true,
+    ]);
+
+    $product = Product::create([
+        'name_ar' => 'تيشيرت قطن معدل',
+        'name_en' => 'Updated Cotton T-Shirt',
+        'description_ar' => 'وصف المنتج بالعربية',
+        'description_en' => 'English description',
+        'price' => 450.00,
+        'old_price' => 500.00,
+        'status' => true,
+        'has_variants' => true,
+    ]);
+
+    $product->categories()->attach($category->id);
+
+    ProductImage::create([
+        'product_id' => $product->id,
+        'image' => 'tshirt.jpg',
+    ]);
+
+    $color = Color::create(['name_ar' => 'أبيض', 'name_en' => 'White']);
+    $size = Size::create(['name' => 'L']);
+
+    ProductVariant::create([
+        'product_id' => $product->id,
+        'color_id' => $color->id,
+        'size_id' => $size->id,
+        'quantity' => 20,
+        'status' => true,
+    ]);
+
+    $user = User::factory()->create([
+        'role' => 'user',
+        'name' => 'Ahmed',
+        'image' => 'user_123.jpg',
+    ]);
+
+    Review::create([
+        'user_id' => $user->id,
+        'product_id' => $product->id,
+        'rating' => 5,
+        'comment' => 'المنتج ممتاز جدًا',
+        'status' => true,
+    ]);
+
+    $response = $this->getJson("/api/home/show/products/{$product->id}");
+
+    $response->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'message' => 'تم جلب المنتج بنجاح.',
+            'data' => [
+                'id' => $product->id,
+                'name_ar' => 'تيشيرت قطن معدل',
+                'name_en' => 'Updated Cotton T-Shirt',
+                'price' => 450,
+                'old_price' => 500,
+                'discount_percentage' => '10%',
+                'has_variants' => true,
+                'reviews' => [
+                    [
+                        'rating' => 5,
+                        'comment' => 'المنتج ممتاز جدًا',
+                        'user' => [
+                            'id' => $user->id,
+                            'name' => 'Ahmed',
+                            'image' => asset('img/users/user_123.jpg'),
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+    $data = $response->json('data');
+    expect($data['categories'])->toHaveCount(1);
+    expect($data['images'])->toHaveCount(1);
+    expect($data['variants'])->toHaveCount(1);
+    expect($data['variants'][0]['color']['name_ar'])->toBe('أبيض');
+    expect($data['variants'][0]['size']['name'])->toBe('L');
+});
+
+test('11. active reviews are included and inactive reviews are excluded from showProduct', function () {
+    $product = Product::create([
+        'name_ar' => 'منتج تجربة',
+        'name_en' => 'Test Product',
+        'price' => 100.00,
+        'status' => true,
+        'has_variants' => false,
+    ]);
+
+    $user1 = User::factory()->create(['role' => 'user', 'name' => 'Active Reviewer']);
+    $user2 = User::factory()->create(['role' => 'user', 'name' => 'Inactive Reviewer']);
+
+    Review::create([
+        'user_id' => $user1->id,
+        'product_id' => $product->id,
+        'rating' => 5,
+        'comment' => 'تقييم نشط',
+        'status' => true,
+    ]);
+
+    Review::create([
+        'user_id' => $user2->id,
+        'product_id' => $product->id,
+        'rating' => 1,
+        'comment' => 'تقييم غير نشط',
+        'status' => false,
+    ]);
+
+    $response = $this->getJson("/api/home/show/products/{$product->id}");
+
+    $response->assertStatus(200);
+    $reviews = $response->json('data.reviews');
+    expect($reviews)->toHaveCount(1);
+    expect($reviews[0]['comment'])->toBe('تقييم نشط');
+});
+
+test('12. reviews in showProduct include only safe user fields and exclude sensitive fields', function () {
+    $product = Product::create([
+        'name_ar' => 'منتج',
+        'name_en' => 'Product',
+        'price' => 50.00,
+        'status' => true,
+        'has_variants' => false,
+    ]);
+
+    $user = User::factory()->create([
+        'role' => 'user',
+        'name' => 'Reviewer User',
+        'image' => 'avatar.png',
+    ]);
+
+    Review::create([
+        'user_id' => $user->id,
+        'product_id' => $product->id,
+        'rating' => 4,
+        'comment' => 'تعليق جيد',
+        'status' => true,
+    ]);
+
+    $response = $this->getJson("/api/home/show/products/{$product->id}");
+
+    $response->assertStatus(200);
+    $review = $response->json('data.reviews.0');
+
+    expect($review)->toHaveKeys(['id', 'user', 'rating', 'comment']);
+    expect($review['user'])->toHaveKeys(['id', 'name', 'image']);
+    expect($review)->not->toHaveKey('status');
+    expect($review['user'])->not->toHaveKey('password');
+    expect($review['user'])->not->toHaveKey('email');
+});
+
+test('13. showProduct returns reviews as an empty array when product has no reviews', function () {
+    $product = Product::create([
+        'name_ar' => 'منتج بدون تقييمات',
+        'name_en' => 'Product Without Reviews',
+        'price' => 80.00,
+        'status' => true,
+        'has_variants' => false,
+    ]);
+
+    $response = $this->getJson("/api/home/show/products/{$product->id}");
+
+    $response->assertStatus(200);
+    expect($response->json('data.reviews'))->toBeArray();
+    expect($response->json('data.reviews'))->toBeEmpty();
+    expect($response->json('data.reviews'))->not->toBeNull();
+});
+
+test('14. reviews in showProduct are ordered latest first', function () {
+    $product = Product::create([
+        'name_ar' => 'منتج ترتيب التقييمات',
+        'name_en' => 'Product Ordering',
+        'price' => 90.00,
+        'status' => true,
+        'has_variants' => false,
+    ]);
+
+    $user1 = User::factory()->create(['role' => 'user']);
+    $user2 = User::factory()->create(['role' => 'user']);
+
+    $review1 = Review::create([
+        'user_id' => $user1->id,
+        'product_id' => $product->id,
+        'rating' => 3,
+        'comment' => 'أول تقييم أقدم',
+        'status' => true,
+    ]);
+    $review1->created_at = now()->subMinutes(10);
+    $review1->save();
+
+    $review2 = Review::create([
+        'user_id' => $user2->id,
+        'product_id' => $product->id,
+        'rating' => 5,
+        'comment' => 'ثاني تقييم أحدث',
+        'status' => true,
+    ]);
+    $review2->created_at = now()->subMinutes(1);
+    $review2->save();
+
+    $response = $this->getJson("/api/home/show/products/{$product->id}");
+
+    $response->assertStatus(200);
+    $reviews = $response->json('data.reviews');
+    expect($reviews)->toHaveCount(2);
+    expect($reviews[0]['id'])->toBe($review2->id);
+    expect($reviews[1]['id'])->toBe($review1->id);
+});
+
+test('15. non-existing product returns 404 with Arabic message on showProduct', function () {
+    $response = $this->getJson('/api/home/show/products/999999');
+
+    $response->assertStatus(404)
+        ->assertJson([
+            'success' => false,
+            'message' => 'المنتج غير موجود.',
+        ]);
+});
+
+test('16. the old GET /api/products/{id} route no longer exists', function () {
+    $response = $this->getJson('/api/products/1');
+
+    expect($response->status())->toBe(404);
+});
+
+test('17. showProduct does not cause N+1 queries because reviews.user and relations are eager loaded', function () {
+    $category = Category::create(['name_ar' => 'قسم', 'name_en' => 'Cat', 'status' => true]);
+    $color = Color::create(['name_ar' => 'لون', 'name_en' => 'Color']);
+    $size = Size::create(['name' => 'مقاس']);
+
+    $product = Product::create([
+        'name_ar' => 'منتج N+1',
+        'name_en' => 'Product N+1',
+        'price' => 150.00,
+        'status' => true,
+        'has_variants' => true,
+    ]);
+    $product->categories()->attach($category->id);
+    ProductImage::create(['product_id' => $product->id, 'image' => 'img.jpg']);
+    ProductVariant::create([
+        'product_id' => $product->id,
+        'color_id' => $color->id,
+        'size_id' => $size->id,
+        'quantity' => 5,
+        'status' => true,
+    ]);
+
+    for ($i = 1; $i <= 5; $i++) {
+        $u = User::factory()->create(['role' => 'user']);
+        Review::create([
+            'user_id' => $u->id,
+            'product_id' => $product->id,
+            'rating' => 5,
+            'comment' => "تعليق {$i}",
+            'status' => true,
+        ]);
+    }
+
+    DB::flushQueryLog();
+    DB::enableQueryLog();
+
+    $response = $this->getJson("/api/home/show/products/{$product->id}");
+    $response->assertStatus(200);
+
+    $queries = DB::getQueryLog();
+    // Eager loads categories, images, variants.color, variants.size, reviews.user (8 queries constant regardless of review count)
+    expect(count($queries))->toBeLessThanOrEqual(8);
+});
+

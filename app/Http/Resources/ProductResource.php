@@ -42,6 +42,11 @@ class ProductResource extends JsonResource
             'variants' => $this->has_variants
                 ? ProductVariantResource::collection($this->relationLoaded('variants') ? $this->variants : $this->variants()->with(['color', 'size'])->get())
                 : [],
+            'reviews' => ReviewResource::collection(
+                $this->relationLoaded('reviews')
+                    ? $this->reviews->where('status', true)->sortByDesc('created_at')->values()
+                    : []
+            ),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];
