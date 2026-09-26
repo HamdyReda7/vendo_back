@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\Admin\ColorController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\SizeController;
+use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Website\HomeController;
 use App\Http\Controllers\Api\Website\OrderController;
@@ -70,5 +71,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/all/orders', [AdminOrderController::class, 'index']);
         Route::get('/show/orders/{id}', [AdminOrderController::class, 'show']);
         Route::post('/update/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+
+        Route::get('/all/users', [UserController::class, 'index']);
+        Route::get('/show/users/{id}', [UserController::class, 'show']);
+        Route::post('/update/users/{id}/status', [UserController::class, 'updateStatus']);
     });
 });
