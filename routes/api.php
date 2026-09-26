@@ -63,6 +63,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/all/orders', [AdminOrderController::class, 'index']);
         Route::get('/show/orders/{id}', [AdminOrderController::class, 'show']);
-        Route::put('/update/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::match(['put', 'post'], '/update/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
     });
 });
