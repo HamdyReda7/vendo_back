@@ -4,11 +4,13 @@ use App\Http\Controllers\Api\Admin\CategoryController;
 use App\Http\Controllers\Api\Admin\ColorController;
 use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController;
+use App\Http\Controllers\Api\Admin\ReviewController as AdminReviewController;
 use App\Http\Controllers\Api\Admin\SizeController;
 use App\Http\Controllers\Api\Admin\UserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\Website\HomeController;
 use App\Http\Controllers\Api\Website\OrderController;
+use App\Http\Controllers\Api\Website\ReviewController as WebsiteReviewController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
@@ -21,6 +23,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 Route::get('/home/products', [HomeController::class, 'products']);
 Route::get('/home/categories', [HomeController::class, 'categories']);
 Route::get('/home/offers', [HomeController::class, 'offers']);
+Route::get('/home/show/products/{id}', [HomeController::class, 'showProduct']);
 
 /*
  * |--------------------------------------------------------------------------
@@ -39,6 +42,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/my/orders', [OrderController::class, 'myOrders']);
     Route::get('/show/my/orders/{id}', [OrderController::class, 'show']);
     Route::post('/update/my/orders/{id}', [OrderController::class, 'update']);
+
+    // Customer Product Review API
+    Route::post('/products/{product_id}/reviews', [WebsiteReviewController::class, 'store']);
 
     /*
      * |--------------------------------------------------------------------------
@@ -75,5 +81,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/all/users', [UserController::class, 'index']);
         Route::get('/show/users/{id}', [UserController::class, 'show']);
         Route::post('/update/users/{id}/status', [UserController::class, 'updateStatus']);
+
+        Route::get('/all/reviews', [AdminReviewController::class, 'index']);
+        Route::get('/show/reviews/{id}', [AdminReviewController::class, 'show']);
+        Route::post('/update/reviews/{id}/status', [AdminReviewController::class, 'updateStatus']);
     });
 });

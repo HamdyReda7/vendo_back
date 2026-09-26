@@ -61,4 +61,33 @@ class HomeController extends Controller
             'data' => ProductResource::collection($offers),
         ]);
     }
+
+    /**
+     * Display the specified product with its details, variants, images, categories, and active reviews.
+     */
+    public function showProduct($id)
+    {
+        $product = Product::with([
+            'categories',
+            'images',
+            'variants.color',
+            'variants.size',
+            'reviews' => function ($query) {
+                $query->where('status', true)->with('user')->latest();
+            },
+        ])->find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'المنتج غير موجود.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب المنتج بنجاح.',
+            'data' => new ProductResource($product),
+        ]);
+    }
 }
