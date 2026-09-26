@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Api\Admin\ProductController;
 use App\Http\Controllers\Api\Admin\SizeController;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\Website\HomeController;
 use App\Http\Controllers\Api\Website\OrderController;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,11 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+
+// Website Home APIs (Public)
+Route::get('/home/products', [HomeController::class, 'products']);
+Route::get('/home/categories', [HomeController::class, 'categories']);
+Route::get('/home/offers', [HomeController::class, 'offers']);
 
 /*
  * |--------------------------------------------------------------------------
