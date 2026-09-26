@@ -9,6 +9,7 @@ use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -177,5 +178,116 @@ class OrderController extends Controller
                 'message' => $e->getMessage(),
             ], $e->getStatusCode());
         }
+    }
+
+    /**
+     * Display a listing of authenticated customer's orders.
+     */
+    public function myOrders()
+    {
+        $orders = Order::with(['user', 'orderItems.product.images'])
+            ->where('user_id', auth()->id())
+            ->latest()
+            ->paginate(5);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب طلباتك بنجاح.',
+            'data' => OrderResource::collection($orders->items()),
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Display the specified order for the authenticated customer.
+     */
+    public function show($id)
+    {
+        $order = Order::with(['user', 'orderItems.product.images'])
+            ->where('user_id', auth()->id())
+            ->find($id);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الطلب غير موجود.',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم جلب الطلب بنجاح.',
+            'data' => new OrderResource($order),
+        ]);
+    }
+
+    /**
+     * Cancel the specified order for the authenticated customer.
+     */
+    public function update(Request $request, $id)
+    {
+        $order = Order::where('user_id', auth()->id())->find($id);
+
+        if (!$order) {
+            return response()->json([
+                'success' => false,
+                'message' => 'الطلب غير موجود.',
+            ], 404);
+        }
+
+        if ($order->status !== 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن إلغاء الطلب بعد تغيير حالته.',
+            ], 422);
+        }
+
+        if ($request->has('status') && $request->input('status') !== 'cancelled') {
+            return response()->json([
+                'success' => false,
+                'message' => 'لا يمكن إلغاء الطلب بعد تغيير حالته.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($order) {
+            $orderItems = $order->orderItems()->get();
+
+            $productIds = $orderItems->pluck('product_id')->filter()->unique()->sort()->values()->all();
+            $variantIds = $orderItems->pluck('product_variant_id')->filter()->unique()->sort()->values()->all();
+
+            $products = !empty($productIds)
+                ? Product::whereIn('id', $productIds)->lockForUpdate()->get()->keyBy('id')
+                : collect();
+
+            $variants = !empty($variantIds)
+                ? ProductVariant::whereIn('id', $variantIds)->lockForUpdate()->get()->keyBy('id')
+                : collect();
+
+            foreach ($orderItems as $item) {
+                if ($item->product_variant_id && $variants->has($item->product_variant_id)) {
+                    $variant = $variants->get($item->product_variant_id);
+                    $variant->quantity += $item->quantity;
+                    $variant->save();
+                } elseif ($item->product_id && $products->has($item->product_id)) {
+                    $product = $products->get($item->product_id);
+                    $product->quantity += $item->quantity;
+                    $product->save();
+                }
+            }
+
+            $order->status = 'cancelled';
+            $order->save();
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'تم إلغاء الطلب بنجاح.',
+            'data' => new OrderResource($order->fresh(['user', 'orderItems.product.images'])),
+        ]);
     }
 }

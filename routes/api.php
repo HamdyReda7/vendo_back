@@ -29,6 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Customer Orders API
     Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/my/orders', [OrderController::class, 'myOrders']);
+    Route::get('/show/my/orders/{id}', [OrderController::class, 'show']);
+    Route::put('/update/my/orders/{id}', [OrderController::class, 'update']);
 
     /*
      * |--------------------------------------------------------------------------
