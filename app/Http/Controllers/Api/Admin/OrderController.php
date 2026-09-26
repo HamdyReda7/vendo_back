@@ -17,7 +17,7 @@ class OrderController extends Controller
      */
     public function index()
     {
-        $orders = Order::with(['user', 'orderItems'])
+        $orders = Order::with(['user', 'orderItems.product.images'])
             ->latest()
             ->paginate(5);
 
@@ -39,7 +39,7 @@ class OrderController extends Controller
      */
     public function show($id)
     {
-        $order = Order::with(['user', 'orderItems'])->find($id);
+        $order = Order::with(['user', 'orderItems.product.images'])->find($id);
 
         if (!$order) {
             return response()->json([
@@ -108,7 +108,7 @@ class OrderController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'تم تحديث حالة الطلب بنجاح.',
-            'data' => new OrderResource($order->fresh(['user', 'orderItems'])),
+            'data' => new OrderResource($order->fresh(['user', 'orderItems.product.images'])),
         ]);
     }
 }

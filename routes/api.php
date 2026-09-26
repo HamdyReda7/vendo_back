@@ -29,6 +29,9 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Customer Orders API
     Route::post('/orders', [OrderController::class, 'store']);
+    Route::get('/my/orders', [OrderController::class, 'myOrders']);
+    Route::get('/show/my/orders/{id}', [OrderController::class, 'show']);
+    Route::put('/update/my/orders/{id}', [OrderController::class, 'update']);
 
     /*
      * |--------------------------------------------------------------------------
@@ -60,6 +63,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/all/orders', [AdminOrderController::class, 'index']);
         Route::get('/show/orders/{id}', [AdminOrderController::class, 'show']);
-        Route::post('/update/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
+        Route::match(['put', 'post'], '/update/orders/{id}/status', [AdminOrderController::class, 'updateStatus']);
     });
 });
